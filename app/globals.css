@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+/* ─── AdhikarPath Brand Tokens ─────────────────────────────────────────────── */
+:root {
+  /* Primary Blue Palette – #1565C0 */
+  --brand-primary: #1565C0;
+  --brand-primary-dark: #003c8f;
+  --brand-primary-light: #5e92f3;
+  --brand-secondary: #e3f2fd;
+  --brand-accent: #ff6f00;
+
+  /* Semantic colours */
+  --background: #f5f7fa;
+  --foreground: #1a1a2e;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --muted: #64748b;
+
+  /* Status colours */
+  --color-success: #2e7d32;
+  --color-warning: #e65100;
+  --color-error: #c62828;
+  --color-info: #0277bd;
+
+  /* shadcn/ui CSS variables */
+  --radius: 0.5rem;
+  --background: 214 100% 97%;
+  --foreground: 222 84% 5%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 84% 5%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 84% 5%;
+  --primary: 213 83% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 213 83% 42%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), "JetBrains Mono", monospace;
+}
+
+/* ─── Base Styles ──────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f5f7fa;
+  color: #1a1a2e;
+  font-family: var(--font-sans), "Inter", system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── AdhikarPath Utility Classes ──────────────────────────────────────────── */
+.adhikar-gradient {
+  background: linear-gradient(135deg, #1565C0 0%, #003c8f 100%);
+}
+
+.adhikar-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.adhikar-sidebar {
+  background: #1565C0;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+.adhikar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+
+.adhikar-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.adhikar-nav-item.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ─── Status Badge Colours ─────────────────────────────────────────────────── */
+.status-active    { color: #2e7d32; background: #e8f5e9; }
+.status-inactive  { color: #c62828; background: #ffebee; }
+.status-dormant   { color: #e65100; background: #fff3e0; }
+.status-pending   { color: #0277bd; background: #e1f5fe; }
+.status-approved  { color: #2e7d32; background: #e8f5e9; }
+.status-rejected  { color: #c62828; background: #ffebee; }
+
+/* ─── Scrollbar Styling ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

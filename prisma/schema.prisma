@@ -1,0 +1,318 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DORMANT
+}
+
+enum UserRole {
+  EMPLOYEE
+  L1_MANAGER
+  ROLE_OWNER
+  ADMIN
+}
+
+enum AccessStatus {
+  ACTIVE
+  DORMANT
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+enum RequestType {
+  NEW_ACCOUNT
+  ADDITIONAL_AUTH
+  PASSWORD_RESET
+  UNLOCK
+  SURRENDER
+  REINSTATE
+}
+
+enum RequestStatus {
+  PENDING
+  L1_APPROVED
+  RO_APPROVED
+  PROVISIONED
+  REJECTED
+  FAILED
+}
+
+enum ApproverRole {
+  L1_MANAGER
+  ROLE_OWNER
+  ADMIN
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ConsultantStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id        String     @id @default(uuid())
+  empId     String     @unique
+  name      String
+  email     String     @unique
+  phone     String?
+  position  String?
+  orgUnit   String?
+  status    UserStatus @default(ACTIVE)
+  managerId String?
+  password  String
+  role      UserRole   @default(EMPLOYEE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Self-referential manager relationship
+  manager      User?  @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates User[] @relation("ManagerSubordinates")
+
+  // Owned roles
+  ownedRoles Role[] @relation("RoleOwner")
+
+  // Access relationships
+  userSystemAccesses  UserSystemAccess[]
+  userRoleAssignments UserRoleAssignment[]
+
+  // Requests
+  requestsInitiated  AccessRequest[] @relation("RequestorRequests")
+  requestsTargeted   AccessRequest[] @relation("TargetUserRequests")
+  approvalSteps      ApprovalStep[]
+
+  // Consultants sponsored
+  sponsoredConsultants Consultant[] @relation("ConsultantSponsor")
+
+  // Quick links
+  quickLinks QuickLink[]
+
+  // Notifications
+  notifications Notification[]
+
+  // Audit logs
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Business {
+  id   String @id @default(uuid())
+  name String
+  code String @unique
+
+  systems     System[]
+  consultants Consultant[]
+
+  @@map("businesses")
+}
+
+model System {
+  id         String @id @default(uuid())
+  systemCode String @unique
+  systemName String
+  businessId String
+  clientId   String?
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  roles              Role[]
+  userSystemAccesses UserSystemAccess[]
+  accessRequests     AccessRequest[]
+
+  @@map("systems")
+}
+
+model Role {
+  id                   String  @id @default(uuid())
+  roleName             String
+  systemId             String
+  processHierarchyPath String?
+  roleOwnerId          String?
+  description          String?
+
+  system    System @relation(fields: [systemId], references: [id])
+  roleOwner User?  @relation("RoleOwner", fields: [roleOwnerId], references: [id])
+
+  userRoleAssignments UserRoleAssignment[]
+  requestRoles        RequestRole[]
+
+  @@map("roles")
+}
+
+model UserSystemAccess {
+  id        String       @id @default(uuid())
+  userId    String
+  systemId  String
+  status    AccessStatus @default(ACTIVE)
+  validFrom DateTime?
+  validTo   DateTime?
+  lastLogon DateTime?
+
+  user   User   @relation(fields: [userId], references: [id])
+  system System @relation(fields: [systemId], references: [id])
+
+  @@unique([userId, systemId])
+  @@map("user_system_accesses")
+}
+
+model UserRoleAssignment {
+  id           String           @id @default(uuid())
+  userId       String
+  roleId       String
+  assignedDate DateTime         @default(now())
+  status       AssignmentStatus @default(ACTIVE)
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+  @@map("user_role_assignments")
+}
+
+model AccessRequest {
+  id           String        @id @default(uuid())
+  requestorId  String
+  targetUserId String
+  requestType  RequestType
+  systemId     String?
+  justification String?
+  isTemporary  Boolean       @default(false)
+  tempStart    DateTime?
+  tempEnd      DateTime?
+  status       RequestStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+
+  requestor  User    @relation("RequestorRequests", fields: [requestorId], references: [id])
+  targetUser User    @relation("TargetUserRequests", fields: [targetUserId], references: [id])
+  system     System? @relation(fields: [systemId], references: [id])
+
+  requestRoles  RequestRole[]
+  approvalSteps ApprovalStep[]
+
+  @@map("access_requests")
+}
+
+model RequestRole {
+  id        String @id @default(uuid())
+  requestId String
+  roleId    String
+
+  request AccessRequest @relation(fields: [requestId], references: [id])
+  role    Role          @relation(fields: [roleId], references: [id])
+
+  @@unique([requestId, roleId])
+  @@map("request_roles")
+}
+
+model ApprovalStep {
+  id           String         @id @default(uuid())
+  requestId    String
+  approverId   String
+  approverRole ApproverRole
+  sequence     Int
+  status       ApprovalStatus @default(PENDING)
+  comments     String?
+  actedAt      DateTime?
+
+  request  AccessRequest @relation(fields: [requestId], references: [id])
+  approver User          @relation(fields: [approverId], references: [id])
+
+  @@map("approval_steps")
+}
+
+model Consultant {
+  id         String           @id @default(uuid())
+  name       String
+  email      String           @unique
+  businessId String?
+  category   String?
+  sponsorId  String?
+  status     ConsultantStatus @default(ACTIVE)
+  validUntil DateTime?
+
+  business Business? @relation(fields: [businessId], references: [id])
+  sponsor  User?     @relation("ConsultantSponsor", fields: [sponsorId], references: [id])
+
+  @@map("consultants")
+}
+
+model QuickLink {
+  id        String @id @default(uuid())
+  userId    String
+  linkType  String
+  linkName  String
+  linkUrl   String
+  sortOrder Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("quick_links")
+}
+
+model HelpDocument {
+  id        String  @id @default(uuid())
+  title     String
+  content   String? @db.Text
+  parentId  String?
+  sortOrder Int     @default(0)
+  platform  String?
+
+  parent   HelpDocument?  @relation("HelpDocumentChildren", fields: [parentId], references: [id])
+  children HelpDocument[] @relation("HelpDocumentChildren")
+
+  @@map("help_documents")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String
+  entityType  String?
+  entityId    String?
+  detailsJson String?  @db.Text
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
